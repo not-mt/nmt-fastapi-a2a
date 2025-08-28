@@ -1,5 +1,7 @@
 # nmt-fastapi-a2a
 
+[![codecov](https://codecov.io/github/not-mt/nmt-fastapi-a2a/branch/main/graph/badge.svg)](https://codecov.io/github/not-mt/nmt-fastapi-a2a)
+
 This codebase implements an agent-to-agent (A2A) orchestration system using FastAPI, and `nmt-fastapi-library`. It is focused on demonstrating how to route user queries to specialized agents. The main entrypoint is the `DirectorAgent`, which streams responses and delegates tasks to other agents (e.g., `WidgetsAgent`) based on query analysis.
 
 ## Installation
@@ -138,3 +140,5 @@ Contributions are welcome! Please submit a pull request or open an issue.
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
+
+Copyright (c) 2025 Alexander Haye

@@ -37,14 +37,16 @@ jobs:
           poetry install
 
       # Run tests with coverage
-      - name: Run pytest with coverage
+      - name: Run pre-commit checks
         run: |
           mkdir .local
-          poetry run invoke coverage
+          #poetry run invoke coverage
+          pre-commit run --all-files
 
       # Upload coverage to Codecov
-      # - name: Upload coverage to Codecov
-      #   uses: codecov/codecov-action@v4
-      #   with:
-      #     files: .local/coverage
-      #     fail_ci_if_error: true
+      - name: Upload coverage to Codecov (main/PR only)
+        uses: codecov/codecov-action@v5
+        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+        with:
+          files: .local/coverage
+          fail_ci_if_error: true
