@@ -10,39 +10,28 @@ jobs:
   ci:
     runs-on: self-hosted
     steps:
-      # Re-use common workflow to install dependencies
+      # download source for this repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # install dependencies from common template
       - name: Install common dependencies
-        uses: ./.github/workflows/common.yml
+        uses: ./.github/actions/install-deps
         with:
-          python-version: 3.12
-#      # Checkout code
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#      # Set up Python
-#      - name: Set up Python
-#        uses: actions/setup-python@v4
-#        with:
-#          python-version: 3.12
-#      # Install dependencies
-#      - name: Install dependencies
-#        run: |
-#          python -m pip install --upgrade pip
-#          pip install poetry
-#          test ! -d ../nmt-fastapi-library || rm -rf ../nmt-fastapi-library
-#          git clone https://github.com/not-mt/nmt-fastapi-library.git \
-#            ../nmt-fastapi-library
-#          pip install ../nmt-fastapi-library
-#
-      # Install the package for this repo
+          python-version: '3.12'
+
+      # install the package for this repo
       - name: Install package
         run: |
           poetry install
-      # Run tests with coverage
+
+      # run the same pre-commit hooks that developers run locally
       - name: Run pre-commit checks
         run: |
           mkdir .local
           pre-commit run --all-files
-      # Upload coverage to Codecov
+
+      # upload coverage to Codecov
       - name: Upload coverage to Codecov (main/PR only)
         uses: codecov/codecov-action@v5
         if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
