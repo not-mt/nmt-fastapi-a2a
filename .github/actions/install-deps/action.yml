@@ -27,5 +27,5 @@ runs:
       run: |
         test ! -d ../nmt-fastapi-library || rm -rf ../nmt-fastapi-library
         git clone https://github.com/not-mt/nmt-fastapi-library.git ../nmt-fastapi-library
-        cd ../nmt-fastapi-library
-        poetry install
+        # cd ../nmt-fastapi-library
+        # poetry install
