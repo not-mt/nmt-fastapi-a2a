@@ -1,0 +1,7 @@
+# cache-dir = ".pypoetry_cache"
+
+[virtualenvs]
+in-project = false
+
+[virtualenvs.options]
+always-copy = true

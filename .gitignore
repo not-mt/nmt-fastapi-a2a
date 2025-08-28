@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+.venv/*
+/poetry.toml
+
+# IDEs, editors, shells, logs, etc.
+/*.code-workspace
+/.local/
+/.vscode/
+*.swp
+*.swo
+*.log
+
+# others
+.env
+.coverage
+.ruff_cache
+.mypy_cache
+.pytest_cache
+.pypoetry_cache
+*.db
+*.sqlite
+*.sqlite-*
+/docker-compose.yml
+/docker-compose.yaml
+
+# our app
+nmtfast-config-local.yaml

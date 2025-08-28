@@ -1,0 +1,148 @@
+[project]
+name = "app"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Alexander Haye",email = "ahayehaye@not-mt.dev"}
+]
+readme = "README.md"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "pre-commit (>=4.2.0,<5.0.0)",
+    "uvicorn[standard] (>=0.35.0,<0.36.0)",
+    "a2a-sdk (>=0.2.12,<0.3.0)",
+    "ag2[mcp,openai] (>=0.9.6,<0.10.0)",
+    "ollama (>=0.5.1,<0.6.0)",
+    "fix-busted-json (>=0.0.18,<0.0.19)",
+    "fastapi (>=0.116.1,<0.117.0)",
+    "jinja2 (>=3.1.6,<4.0.0)",
+    "httpx (>=0.28.1,<0.29.0)",
+    "instructor (>=1.9.2,<2.0.0)",
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 88  # Specify the line length
+target-version = ['py311']  # Specify your Python version
+include = '\.pyi?$'
+exclude = '''  # Specify the files/dirs that should be ignored by the black formatter
+/(
+    \.eggs
+  | \.git
+  | \.mypy_cache
+  | \.tox
+  | \.local
+  | \.pypoetry_cache
+  | \.ruff_cache
+  | \.venv
+  | venv
+  | _build
+  | build
+  | dist
+)/
+'''
+
+[tool.isort]
+profile = "black"
+known_first_party = "app"
+#src_paths = ["src"]
+skip = [
+  ".ruff_cache",
+  ".pypoetry_cache",
+  ".venv",
+  "venv",
+  "alembic"
+]
+
+[tool.pydoclint]
+style = "google"
+# TODO: figure out how to make this multi-line
+exclude = '\.pre-commit.*|LICENSE|\.(lock|txt|ini|toml|md)$|^\.?venv/|\.local'
+# NOTE: we are not going to duplicate types in the function and docstring
+arg_type_hints_in_docstring = false
+
+[tool.pydocstyle]
+convention = "google"
+# NOTE: D212 is 'Multi-line docstring summary should start at the first line' and
+#   and it is mutually exclusive with D213. They both relate to the placement of the
+#   summary line in a multiline docstring but enforce different styles. D212 requires
+#   the summary line to be on the first line after the opening quotes, while D213
+#   requires it to be on the second line. A docstring can't simultaneously adhere to
+#   both styles, and this project prefers D213.
+# NOTE: pydocstyle follows a strict interpretation of PEP 257, enforcing a separate
+#   __init__ docstring unless explicitly configured otherwise (D107). pydoclint (with
+#   Google-style docstrings) has a mutually exclusive requirement that __init__ methods
+#   do not have a docstring at all. For our purposes, it's easier to resolve the
+#   conflict by ignoring D107 in pydocstyle.
+# NOTE: D200 wants all single line comments to have quotes on the same line, but this
+#   can make documentation harder to read when putting the start and end """ on their
+#   own line would improve readability
+add-ignore = ["D212", "D107", "D200"]
+# You can adjust the rules you want to ignore if necessary
+# Only check .py files (adjust if you need more or less)
+match = "^(?!test_).*\\.py"
+match-dir = "^(?!alembic|\\.?venv|\\.local).*$"
+
+[tool.mypy]
+cache_dir = ".local/mypy_cache"
+exclude = "^alembic/|^\\.?(venv)/|^\\.local"
+explicit_package_bases = true
+mypy_path = "src"
+
+#[[tool.mypy.overrides]]
+#module = "THE_NEXT_MODULE_GOES_HERE.*"
+#ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+cache_dir = ".local/pytest_cache"
+addopts = "--import-mode=importlib"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# testpaths = ["tests"]
+
+[tool.coverage.run]
+data_file = ".local/coverage"
+branch = true
+source = ["app", "main.py"]
+omit = [
+    "*/alembic/*",
+    "*/tests/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+show_missing = true
+omit = [
+    "*/tests/*",
+]
+# exclude normal '# pragma: no cover' and ALL logger.* calls
+exclude_lines = [
+    "pragma: no cover",
+    ".*logger\\.(debug|info|warning|error|critical).*\\(.*",
+]
+
+[tool.ruff]
+cache-dir = ".local/ruff_cache"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^4.1.0"
+pytest = "^8.3.4"
+black = "^25.1.0"
+isort = "^6.0.0"
+mypy = "^1.15.0"
+invoke = "^2.2.0"
+ruff = "^0.9.6"
+pydoclint = "^0.6.0"
+pyment = "^0.3.3"
+pydocstyle = "^6.3.0"
+pytest-cov = "^6.0.0"
+pyright = "^1.1.396"
+types-pyyaml = "^6.0.12.20241230"
+pytest-asyncio = "^1.1.0"
+
+[tool.poetry.group.dev-nmtfast.dependencies]
+nmtfast = { path = "../nmt-fastapi-library", develop = true }

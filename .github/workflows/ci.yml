@@ -1,0 +1,50 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches:
+      - '*'  # all branches
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: self-hosted
+
+    steps:
+      # Checkout code
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # Set up Python
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.12
+
+      # Install dependencies
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          test ! -d ../nmt-fastapi-library || rm -rf ../nmt-fastapi-library
+          git clone https://github.com/not-mt/nmt-fastapi-library.git \
+            ../nmt-fastapi-library
+          pip install ../nmt-fastapi-library
+
+      # Install the package for this repo
+      - name: Install package
+        run: |
+          poetry install
+
+      # Run tests with coverage
+      - name: Run pytest with coverage
+        run: |
+          mkdir .local
+          poetry run invoke coverage
+
+      # Upload coverage to Codecov
+      # - name: Upload coverage to Codecov
+      #   uses: codecov/codecov-action@v4
+      #   with:
+      #     files: .local/coverage
+      #     fail_ci_if_error: true

@@ -1,0 +1,21 @@
+{
+  // inputs are prompted on first server start, then stored securely by VS Code.
+  "inputs": [
+    {
+      "type": "promptString",
+      "id": "widgets-api-key",
+      "description": "X-API-Key for Widgets API",
+      "password": true
+    }
+  ],
+  "servers": {
+    "widgets-api": {
+      "type": "http",
+      // NOTE: the trailing slash is important!
+      "url": "http://localhost:8001/mcp/",
+      "headers": {
+        "X-API-Key": "${input:widgets-api-key}",
+      }
+    }
+  }
+}

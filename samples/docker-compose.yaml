@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  nmt-fastapi-a2a:
+    container_name: nmt-fastapi-a2a
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        LIBRARY_BRANCH: 'main'  # adjust if testing changes in library
+    image: nmt-fastapi-a2a:latest
+    ports:
+      - 8080:8080
+    volumes:
+      - ./nmtfast-config-local.yaml:/app/nmtfast-config-local.yaml
+      - ./development.sqlite:/app/development.sqlite
+    environment:
+      APP_CONFIG_FILES: nmtfast-config-default.yaml,nmtfast-config-local.yaml
+    #
+    # Add any other necessary configurations
+    #

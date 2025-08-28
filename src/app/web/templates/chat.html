@@ -1,0 +1,412 @@
+<!--
+Copyright (c) 2025. All rights reserved.
+Licensed under the MIT License. See LICENSE file in the project root for details.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Agent Chat</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/ws.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f7f7f7; }
+        .chatbox { max-width: 600px; margin: 40px auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 24px; }
+        .msg { margin: 12px 0; }
+        .msg.user { text-align: right; color: #2a7ae2; }
+        .msg.agent { text-align: left; color: #222; }
+        form { display: flex; gap: 8px; margin-top: 24px; }
+        input[type=text] { flex: 1; padding: 8px; border-radius: 4px; border: 1px solid #ccc; }
+        button { padding: 8px 16px; border-radius: 4px; border: none; background: #2a7ae2; color: #fff; cursor: pointer; }
+        button:hover:enabled { background: #185a9d; }
+        button:disabled { background: #ccc !important; color: #fff; cursor: not-allowed; }
+        #agent-progress {
+          display: none;
+          margin: 16px auto;
+          text-align: left;
+        }
+        .spinner {
+          display: inline-block;
+          width: 24px;
+          height: 24px;
+          border: 3px solid #eee;
+          border-top: 3px solid #2a7ae2;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          vertical-align: middle;
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+<!-- modal for acquiring OAuth Token -->
+<div id="token-modal" style="position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1000;">
+    <div style="background:#fff;padding:32px 32px;border-radius:8px;box-shadow:0 2px 16px #0002;min-width:320px;max-width:90vw;">
+        <h3>Enter OAuth Token</h3>
+        <input id="oauth-token-input" type="text" placeholder="Paste your OAuth token here" style="width:100%;padding:8px;margin:16px 0 8px 0;border-radius:4px;border:1px solid #ccc;box-sizing:border-box;" />
+        <button onclick="saveToken()" style="padding:8px 16px;border-radius:4px;border:none;background:#2a7ae2;color:#fff;cursor:pointer;">Continue</button>
+    </div>
+</div>
+<!-- chatbox for user messages and agent responses -->
+    <div class="chatbox">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+            <h2 style="margin:0;">Agent Chat</h2>
+            <button id="show-oauth-btn" type="button" style="margin-left:auto;background:#eee;color:#2a7ae2;border:none;padding:6px 14px;border-radius:4px;cursor:pointer;font-size:1em;">Update Token</button>
+        </div>
+        <div id="chat-area">
+            <div id="messages">
+                <div class="msg agent" id="welcome-agent-msg">
+                    Welcome to Agent Chat! How may I assist you?<br>
+                    <div class="timestamp" id="welcome-timestamp" style="font-size:0.8em;color:#888;margin-top:8px;text-align:left;"></div>
+                </div>
+            </div>
+            <!-- Connection status indicator (moved here, above input box) -->
+            <div id="connection-status" style="display:flex;align-items:center;gap:8px;margin:12px 0 4px 0;">
+                <span id="status-icon" style="font-size:1.3em;vertical-align:middle;">✅</span>
+                <span id="status-text" style="font-size:0.95em;color:#222;">Connected</span>
+            </div>
+            <form id="chat-form" hx-ext="ws" ws-connect="/ws" hx-ws="send:submit" autocomplete="off">
+                <input type="text" name="user_input" placeholder="Type your message..." required />
+                <!-- Removed hidden message fields; only send new input -->
+                <input type="hidden" name="oauth_token" id="oauth-token-hidden" />
+                <button type="submit" id="send-btn">Send</button>
+            </form>
+        </div>
+    </div>
+<!-- Move script outside chat-area so it is not swapped by htmx -->
+<script>
+// Set welcome message timestamp to browser local time
+(function() {
+    var ts = document.getElementById('welcome-timestamp');
+    if (ts) {
+        ts.textContent = new Date().toLocaleTimeString();
+    }
+})();
+
+// save token to localStorage and hide modal
+function saveToken() {
+    var token = document.getElementById('oauth-token-input').value.trim();
+    if (!token) {
+        alert('Please enter a token.');
+        return;
+    }
+    document.getElementById('oauth-token-hidden').value = token;
+    localStorage.setItem('oauth_token', token); // persist token
+    document.getElementById('token-modal').style.display = 'none';
+    focusInputBox(10);
+}
+
+// restore token from localStorage to hidden form field
+function restoreTokenToForm() {
+    var token = localStorage.getItem('oauth_token');
+    var tokenField = document.getElementById('oauth-token-hidden');
+    if (token && tokenField) {
+        tokenField.value = token;
+    }
+}
+
+// focus the input box after a short delay
+function focusInputBox(attempts) {
+    if (attempts <= 0) {
+        //console.log("Ended attempting to capture input focus");
+        return;
+    }
+    var inputBox = document.querySelector('#chat-form input[name="user_input"]');
+    inputBox.focus();
+    requestAnimationFrame(function() { focusInputBox(attempts - 1); });
+}
+
+// hide progress indicator after agent response
+function hideAgentProgress() {
+    var progressDiv = document.getElementById('agent-progress');
+    if (progressDiv) progressDiv.style.display = 'none';
+}
+
+// scroll messages to bottom as new messages and input is added
+function scrollMessagesToBottom() {
+    var messagesDiv = document.getElementById('messages');
+    if (messagesDiv) {
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+// always move progress indicator to bottom after each message or when shown
+function moveAgentProgressToBottom() {
+    var messagesDiv = document.getElementById('messages');
+    var progressDiv = document.getElementById('agent-progress');
+    if (messagesDiv && progressDiv) {
+        messagesDiv.appendChild(progressDiv);
+    }
+}
+
+// restore token on initial load
+restoreTokenToForm();
+document.addEventListener('submit', function(e) {
+    console.log("submit event fired:", e);
+    var chatForm = document.getElementById('chat-form');
+    if (e.target === chatForm) {
+        // Always set hidden field from localStorage before checking
+        var token = localStorage.getItem('oauth_token');
+        var tokenField = document.getElementById('oauth-token-hidden');
+        if (tokenField) {
+            tokenField.value = token || '';
+        }
+        var sendBtn = document.getElementById('send-btn');
+        // Only show modal if user is submitting and token is missing
+        if ((!token || token === '') && e.isTrusted) {
+            e.preventDefault();
+            document.getElementById('token-modal').style.display = 'flex';
+            var modal = document.getElementById('token-modal');
+            if (modal && modal.style.display === 'flex') {
+                var tokenInput = document.getElementById('oauth-token-input');
+                if (tokenInput) tokenInput.focus();
+            }
+            return;
+        }
+        // Optimistically add user message to chat
+        var inputBox = document.querySelector('#chat-form input[name="user_input"]');
+        var messagesDiv = document.getElementById('messages');
+        if (inputBox && messagesDiv && inputBox.value.trim() !== '') {
+            var userMsg = document.createElement('div');
+            userMsg.className = 'msg user';
+            userMsg.textContent = inputBox.value;
+            // Add timestamp below message
+            var ts = document.createElement('div');
+            ts.className = 'timestamp';
+            ts.style.fontSize = '0.8em';
+            ts.style.color = '#888';
+            ts.style.marginTop = '8px';
+            ts.textContent = new Date().toLocaleTimeString();
+            userMsg.appendChild(document.createElement('br'));
+            userMsg.appendChild(ts);
+            messagesDiv.appendChild(userMsg);
+            setTimeout(function() { inputBox.value = ''; }, 10);
+        }
+        // Only disable button if token is present
+        if (token && sendBtn) {
+            sendBtn.disabled = true;
+            sendBtn.classList.remove('htmx-reenable');
+            focusInputBox(10);
+        }
+    }
+    setTimeout(scrollMessagesToBottom, 0);
+}, true);
+
+// re-attach focus and restore token after every htmx swap (e.g., after each response)
+document.body.addEventListener('htmx:afterSwap', function(e) {
+    console.log("htmx:afterSwap event fired:", e);
+    restoreTokenToForm();
+    setTimeout(function() {
+        var inputBox = document.querySelector('#chat-form input[name="user_input"]');
+        if (inputBox) inputBox.focus();
+    }, 0);
+});
+
+// re-enable send button after htmx WebSocket response or error
+document.body.addEventListener('htmx:wsAfterMessage', function(e) {
+    console.log("htmx:wsAfterMessage event fired:", e);
+    hideAgentProgress();
+    moveAgentProgressToBottom();
+    var sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.add('htmx-reenable');
+        focusInputBox(10);
+    }
+    // Add timestamps below all agent messages that do not have one
+    var messages = document.querySelectorAll('.msg.agent');
+    messages.forEach(function(msg) {
+        if (!msg.querySelector('.timestamp')) {
+            var ts = document.createElement('div');
+            ts.className = 'timestamp';
+            ts.style.fontSize = '0.8em';
+            ts.style.color = '#888';
+            ts.style.marginTop = '8px';
+            ts.style.textAlign = 'left';
+            ts.textContent = new Date().toLocaleTimeString();
+            msg.appendChild(document.createElement('br'));
+            msg.appendChild(ts);
+        }
+    });
+    setTimeout(scrollMessagesToBottom, 0);
+});
+
+// Connection status indicator logic
+function setConnectionStatus(ok) {
+    var icon = document.getElementById('status-icon');
+    var text = document.getElementById('status-text');
+    if (icon && text) {
+        if (ok) {
+            icon.textContent = '✅';
+            text.textContent = 'Connected';
+            text.style.color = '#222';
+        } else {
+            icon.textContent = '❌';
+            text.textContent = 'Connection problem';
+            text.style.color = '#c00';
+        }
+    }
+}
+
+// Listen for htmx WebSocket events to update status
+document.body.addEventListener('htmx:wsOpen', function(e) {
+    setConnectionStatus(true);
+});
+document.body.addEventListener('htmx:wsClose', function(e) {
+    setConnectionStatus(false);
+});
+document.body.addEventListener('htmx:wsError', function(e) {
+    setConnectionStatus(false);
+    console.log("htmx:wsError event fired:", e);
+    hideAgentProgress();
+    moveAgentProgressToBottom();
+    var sendBtn = document.getElementById('send-btn');
+    if (sendBtn) {
+        sendBtn.disabled = false;
+        sendBtn.classList.add('htmx-reenable');
+        focusInputBox(10);
+    }
+    // Optionally, you can show a toast or notification here if desired
+});
+
+// Insert progress indicator into agent message area on page load
+window.addEventListener('DOMContentLoaded', function() {
+    console.log("DOMContentLoaded event fired");
+    var messagesDiv = document.getElementById('messages');
+    if (messagesDiv && !document.getElementById('agent-progress')) {
+        var progressDiv = document.createElement('div');
+        progressDiv.id = 'agent-progress';
+        progressDiv.innerHTML = '<span class="spinner"></span> <span style="font-size:0.9em;color:#888;">Agent is thinking...</span>';
+        messagesDiv.appendChild(progressDiv);
+    }
+    var modal = document.getElementById('token-modal');
+    if (modal && modal.style.display === 'flex') {
+        var tokenInput = document.getElementById('oauth-token-input');
+        if (tokenInput) tokenInput.focus();
+    }
+});
+
+// Show progress indicator after submit
+var chatForm = document.getElementById('chat-form');
+if (chatForm) {
+    chatForm.addEventListener('submit', function(e) {
+        var progressDiv = document.getElementById('agent-progress');
+        if (progressDiv) {
+            progressDiv.style.display = 'block';
+            moveAgentProgressToBottom();
+        }
+    });
+}
+
+// add progress indicator CSS
+var style = document.createElement('style');
+style.textContent = `
+#agent-progress {
+  display: none;
+  margin: 16px auto;
+  text-align: left;
+}
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 3px solid #eee;
+  border-top: 3px solid #2a7ae2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  vertical-align: middle;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+`;
+document.head.appendChild(style);
+
+window.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('token-modal');
+    if (modal && modal.style.display === 'flex') {
+        var tokenInput = document.getElementById('oauth-token-input');
+        if (tokenInput) tokenInput.focus();
+    }
+});
+
+// show OAuth modal when update token button is clicked
+window.addEventListener('DOMContentLoaded', function() {
+    var showBtn = document.getElementById('show-oauth-btn');
+    if (showBtn) {
+        showBtn.addEventListener('click', function() {
+            var modal = document.getElementById('token-modal');
+            if (modal) {
+                modal.style.display = 'flex';
+                var tokenInput = document.getElementById('oauth-token-input');
+                if (tokenInput) tokenInput.focus();
+            }
+        });
+    }
+});
+
+// allow Enter key to submit OAuth modal
+var tokenInput = document.getElementById('oauth-token-input');
+if (tokenInput) {
+    tokenInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            saveToken();
+        }
+    });
+}
+
+// Chat input history support
+var chatInput = document.querySelector('#chat-form input[name="user_input"]');
+var chatHistory = [];
+var chatHistoryIndex = -1;
+var chatDraft = '';
+if (chatInput) {
+    chatInput.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowUp') {
+            if (chatHistory.length > 0) {
+                if (chatHistoryIndex === -1) {
+                    chatDraft = chatInput.value;
+                    chatHistoryIndex = chatHistory.length - 1;
+                } else if (chatHistoryIndex > 0) {
+                    chatHistoryIndex--;
+                }
+                chatInput.value = chatHistory[chatHistoryIndex];
+                setTimeout(function() { chatInput.select(); }, 0);
+            }
+            e.preventDefault();
+        } else if (e.key === 'ArrowDown') {
+            if (chatHistory.length > 0 && chatHistoryIndex !== -1) {
+                if (chatHistoryIndex < chatHistory.length - 1) {
+                    chatHistoryIndex++;
+                    chatInput.value = chatHistory[chatHistoryIndex];
+                } else {
+                    chatHistoryIndex = -1;
+                    chatInput.value = chatDraft;
+                }
+                setTimeout(function() { chatInput.select(); }, 0);
+            }
+            e.preventDefault();
+        }
+    });
+    // Save input to history on submit
+    var chatForm = document.getElementById('chat-form');
+    if (chatForm) {
+        chatForm.addEventListener('submit', function(e) {
+            var val = chatInput.value.trim();
+            if (val && (chatHistory.length === 0 || chatHistory[chatHistory.length-1] !== val)) {
+                chatHistory.push(val);
+            }
+            chatHistoryIndex = -1;
+            chatDraft = '';
+        });
+    }
+}
+</script>
+</body>
+</html>

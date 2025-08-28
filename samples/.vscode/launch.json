@@ -1,0 +1,71 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "compounds": [
+    {
+      "name": "Compound: FastAPI/Others",
+      "configurations": [
+        "debugpy: frontend",
+        "debugpy: director",
+        "debugpy: widgets",
+      ],
+      "stopAll": true
+    }
+  ],
+  "configurations": [
+    {
+      "name": "debugpy: local PID",
+      "type": "debugpy",
+      "request": "attach",
+      "processId": "${command:pickProcess}"
+    },
+    {
+      "name": "debugpy: frontend",
+      "consoleName": "frontend",
+      "console":"internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "uvicorn",
+      "args": [
+        "src.app.web:app",
+        "--port","8010",
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        //"PYTHONASYNCIODEBUG": "1",
+        "APP_CONFIG_FILES": "nmtfast-config-default.yaml,nmtfast-config-local.yaml",
+      }
+    },
+    {
+      "name": "debugpy: director",
+      "consoleName": "director",
+      "console":"internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/app/director.py",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        //"PYTHONASYNCIODEBUG": "1",
+        "APP_CONFIG_FILES": "nmtfast-config-default.yaml,nmtfast-config-local.yaml",
+      }
+    },
+    {
+      "name": "debugpy: widgets",
+      "consoleName": "widgets",
+      "console":"internalConsole",
+      "internalConsoleOptions": "openOnSessionStart",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/src/app/widgets.py",
+      "cwd": "${workspaceFolder}",
+      "env": {
+        //"PYTHONASYNCIODEBUG": "1",
+        "APP_CONFIG_FILES": "nmtfast-config-default.yaml,nmtfast-config-local.yaml",
+      }
+    },
+  ]
+}

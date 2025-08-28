@@ -1,0 +1,46 @@
+{
+  "folders": [
+    {
+      "path": "."
+    },
+  ],
+  "settings": {
+    "files.eol": "\n",
+    "ruff.interpreter": [
+      "${workspaceFolder}/.venv/Scripts/python.exe"
+    ],
+    "python.terminal.activateEnvironment": true,
+    "python.terminal.activateEnvInCurrentTerminal": true,
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/Scripts/python.exe",
+    "python.autoComplete.extraPaths": [
+    ],
+    "python.analysis.extraPaths": [
+    ],
+    "files.associations": {
+      "*.env": "shellscript"
+    },
+    "files.exclude": {
+      "**/__pycache__": true,
+    },
+    "workbench.panel.defaultLocation": "bottom",
+    "terminal.integrated.profiles.windows": {
+      "Git Bash (activate.env)": {
+        "source":"Git Bash",
+        "args": [
+          "-i",
+          "-c",
+          "'",
+          "bash",
+          "--rcfile",
+          "./.local/activate.env",
+          "||",
+          "bash",
+          "--login",
+          "-i",
+          "'"
+        ]
+      }
+    },
+    "terminal.integrated.defaultProfile.windows": "Git Bash (activate.env)"
+  }
+}

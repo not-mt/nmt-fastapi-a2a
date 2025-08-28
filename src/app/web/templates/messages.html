@@ -1,0 +1,9 @@
+<!--
+Copyright (c) 2025. All rights reserved.
+Licensed under the MIT License. See LICENSE file in the project root for details.
+-->
+<div id="messages" hx-swap-oob="beforeend">
+    {% for role, msg in messages %}
+        <div class="msg {{ role }}">{{ msg }}</div>
+    {% endfor %}
+</div>
