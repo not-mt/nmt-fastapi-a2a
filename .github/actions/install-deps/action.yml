@@ -32,9 +32,9 @@ runs:
       shell: bash
       run: |
         # Try canonical PyPI names first, fall back to underscore variants using pip show
-        ver=$(pip show docstring-parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        ver=$(pip show docstring-parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
         if [ -z "$ver" ]; then
-          ver=$(pip show docstring_parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+          ver=$(pip show docstring_parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
         fi
         echo "doc_ver=$ver" >> $GITHUB_OUTPUT
 
@@ -42,9 +42,9 @@ runs:
       name: Detect installed docstring_parser_fork version
       shell: bash
       run: |
-        ver=$(pip show docstring-parser-fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        ver=$(pip show docstring-parser-fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
         if [ -z "$ver" ]; then
-          ver=$(pip show docstring_parser_fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+          ver=$(pip show docstring_parser_fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
         fi
         echo "doc_fork_ver=$ver" >> $GITHUB_OUTPUT
 
