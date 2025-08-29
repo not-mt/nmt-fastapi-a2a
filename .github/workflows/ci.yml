@@ -8,6 +8,8 @@ on:
 
 jobs:
   lint:
+    # only run for pushes
+    if: github.event_name != 'pull_request'
     runs-on: self-hosted
     strategy:
       fail-fast: false
@@ -46,15 +48,3 @@ jobs:
       - name: Run linter tasks
         run: |
           poetry run invoke lint
-
-#      - name: Run pre-commit checks
-#        run: |
-#          mkdir .local
-#          poetry run pre-commit run --all-files
-#
-#      - name: Upload coverage to Codecov (main/PR only)
-#        uses: codecov/codecov-action@v5
-#        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-#        with:
-#          files: .local/coverage
-#          fail_ci_if_error: true
