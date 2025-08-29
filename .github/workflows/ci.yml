@@ -9,6 +9,11 @@ on:
 jobs:
   ci:
     runs-on: self-hosted
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: [ '3.10', '3.11', '3.12', '3.13' ]
+      # max-parallel: 2
     steps:
       # download source for this repository
       - name: Checkout repository
@@ -18,7 +23,17 @@ jobs:
       - name: Install common dependencies
         uses: ./.github/actions/install-deps
         with:
-          python-version: '3.12'
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Poetry / pip
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pypoetry
+            ~/.cache/pip
+          key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-poetry-${{ matrix.python-version }}-
 
       # install the package for this repo
       - name: Install package
