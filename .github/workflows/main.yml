@@ -50,3 +50,5 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: .local/coverage
           fail_ci_if_error: true
+          flags: unittests
+          verbose: true
