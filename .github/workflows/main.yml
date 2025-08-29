@@ -1,22 +1,22 @@
-name: Continuous Integration
+name: Main branch CI
 
 on:
   push:
     branches:
-      - '**'  # all branches
+      - main
   pull_request:
+    types: [closed]
 
 jobs:
   lint:
+    # only run for a merged pull request or for direct pushes
+    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: self-hosted
     strategy:
       fail-fast: false
       matrix:
         python-version:
-          - 3.11
           - 3.12
-          - 3.13
-      # max-parallel: 2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -41,20 +41,14 @@ jobs:
           poetry install
 
       - name: Fix docstring_parser packages inside Poetry venv
-        uses: ./.github/actions/fix-docstring-parser
+        uses: ./.github/actions/fix-docstrings
 
-      - name: Run linter tasks
+      - name: Run all pre-commit checks
         run: |
-          poetry run invoke lint
+          poetry run pre-commit run --all-files
 
-#      - name: Run pre-commit checks
-#        run: |
-#          mkdir .local
-#          poetry run pre-commit run --all-files
-#
-#      - name: Upload coverage to Codecov (main/PR only)
-#        uses: codecov/codecov-action@v5
-#        if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
-#        with:
-#          files: .local/coverage
-#          fail_ci_if_error: true
+      - name: Upload coverage to Codecov (main/PR only)
+        uses: codecov/codecov-action@v5
+        with:
+          files: .local/coverage
+          fail_ci_if_error: true
