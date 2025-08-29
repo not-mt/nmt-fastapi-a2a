@@ -44,6 +44,44 @@ jobs:
         run: |
           poetry install
 
+      - id: detect_poetry_doc_versions
+        name: Detect docstring package versions in Poetry venv
+        shell: bash
+        run: |
+          # Use poetry-run pip show to detect versions inside the venv; tolerant to not-found
+          doc_ver=$(poetry run pip show docstring-parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+          if [ -z "$doc_ver" ]; then
+            doc_ver=$(poetry run pip show docstring_parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+          fi
+
+          doc_fork_ver=$(poetry run pip show docstring-parser-fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+          if [ -z "$doc_fork_ver" ]; then
+            doc_fork_ver=$(poetry run pip show docstring_parser_fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+          fi
+
+          echo "doc_ver=$doc_ver" >> $GITHUB_OUTPUT
+          echo "doc_fork_ver=$doc_fork_ver" >> $GITHUB_OUTPUT
+
+      - name: Ensure docstring packages inside Poetry venv
+        shell: bash
+        run: |
+          echo "Detected in venv: docstring_parser=${{ steps.detect_poetry_doc_versions.outputs.doc_ver }}, docstring_parser_fork=${{ steps.detect_poetry_doc_versions.outputs.doc_fork_ver }}"
+          # Uninstall all likely variants (ignore errors)
+          poetry run pip uninstall -y docstring-parser docstring_parser docstring-parser-fork docstring_parser_fork || true
+
+          if [ -n "${{ steps.detect_poetry_doc_versions.outputs.doc_ver }}" ]; then
+            poetry run pip install "docstring-parser==${{ steps.detect_poetry_doc_versions.outputs.doc_ver }}"
+          else
+            echo "docstring_parser not present in venv; skipping reinstall"
+          fi
+
+          if [ -n "${{ steps.detect_poetry_doc_versions.outputs.doc_fork_ver }}" ]; then
+            poetry run pip install "docstring-parser-fork==${{ steps.detect_poetry_doc_versions.outputs.doc_fork_ver }}"
+          else
+            echo "docstring_parser_fork not present in venv; installing latest"
+            poetry run pip install docstring-parser-fork
+          fi
+
       # run the same pre-commit hooks that developers run locally
       - name: Run pre-commit checks
         run: |
