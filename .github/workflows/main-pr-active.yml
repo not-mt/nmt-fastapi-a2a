@@ -44,31 +44,6 @@ jobs:
       - name: Fix docstring_parser packages inside Poetry venv
         uses: ./.github/actions/fix-docstring-parser
 
-      - name: Generate coverage and test reports
+      - name: Run all pre-commit checks
         run: |
-          poetry run pytest \
-            --cov=app \
-            --cov-report term \
-            --cov-report=xml:coverage.xml \
-            --junitxml=junit.xml \
-            -o junit_family=legacy \
-            tests
-
-      - name: Upload coverage to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: coverage.xml
-          fail_ci_if_error: true
-          # flags: unittests
-          verbose: true
-
-      - name: Upload test results to Codecov
-        if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: junit.xml
-          fail_ci_if_error: true
-          verbose: true
+          poetry run pre-commit run --all-files
