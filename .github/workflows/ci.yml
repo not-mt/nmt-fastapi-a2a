@@ -22,12 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # install dependencies from common template
-      - name: Install common dependencies
-        uses: ./.github/actions/install-deps
-        with:
-          python-version: ${{ matrix.python-version }}
-
+      # cache Poetry and pip directories to speed up subsequent runs
       - name: Cache Poetry / pip
         uses: actions/cache@v4
         with:
@@ -37,6 +32,12 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
             ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+
+      # install dependencies from common template
+      - name: Install common dependencies
+        uses: ./.github/actions/install-deps
+        with:
+          python-version: ${{ matrix.python-version }}
 
       # install the package for this repo
       - name: Install package
