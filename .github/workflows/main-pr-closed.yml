@@ -42,7 +42,9 @@ jobs:
 
       - name: Run all pre-commit checks
         run: |
+          mkdir .local
           poetry run pre-commit run --all-files
+          cp .local/coverage
 
       - name: Upload coverage to Codecov (main/PR only)
         uses: codecov/codecov-action@v5
