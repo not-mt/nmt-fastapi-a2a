@@ -27,12 +27,49 @@ runs:
       run: |
         test ! -d ../nmt-fastapi-library || rm -rf ../nmt-fastapi-library
         git clone https://github.com/not-mt/nmt-fastapi-library.git ../nmt-fastapi-library
-
-    - name: Re-install docstring_parser_fork
+    - id: detect_docstring_parser
+      name: Detect installed docstring_parser version
       shell: bash
       run: |
-        docstring_parser_version=`pip freeze | grep -i docstring_parser== | sed -e 's/==/ /' | awk '{print $2}'`
-        docstring_parser_fork_version=`pip freeze | grep -i docstring_parser_fork== | sed -e 's/==/ /' | awk '{print $2}'`
-        pip uninstall -y docstring_parser_fork docstring_parser
-        pip install docstring_parser==$docstring_parser_version
-        pip install docstring_parser_fork==$docstring_parser_fork_version
+        # Try canonical PyPI names first, fall back to underscore variants using pip show
+        ver=$(pip show docstring-parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        if [ -z "$ver" ]; then
+          ver=$(pip show docstring_parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        fi
+        echo "doc_ver=$ver" >> $GITHUB_OUTPUT
+
+    - id: detect_docstring_parser_fork
+      name: Detect installed docstring_parser_fork version
+      shell: bash
+      run: |
+        ver=$(pip show docstring-parser-fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        if [ -z "$ver" ]; then
+          ver=$(pip show docstring_parser_fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}')
+        fi
+        echo "doc_fork_ver=$ver" >> $GITHUB_OUTPUT
+
+    - name: Uninstall docstring packages
+      shell: bash
+      run: |
+        pip uninstall -y docstring-parser docstring_parser docstring-parser-fork docstring_parser_fork || true
+
+    - name: Reinstall docstring_parser (if previously installed)
+      shell: bash
+      run: |
+        if [ -n "${{ steps.detect_docstring_parser.outputs.doc_ver }}" ]; then
+          echo "Reinstalling docstring_parser==${{ steps.detect_docstring_parser.outputs.doc_ver }}"
+          pip install "docstring-parser==${{ steps.detect_docstring_parser.outputs.doc_ver }}"
+        else
+          echo "docstring_parser not previously installed; skipping"
+        fi
+
+    - name: Reinstall docstring_parser_fork (or install latest)
+      shell: bash
+      run: |
+        if [ -n "${{ steps.detect_docstring_parser_fork.outputs.doc_fork_ver }}" ]; then
+          echo "Reinstalling docstring_parser_fork==${{ steps.detect_docstring_parser_fork.outputs.doc_fork_ver }}"
+          pip install "docstring-parser-fork==${{ steps.detect_docstring_parser_fork.outputs.doc_fork_ver }}"
+        else
+          echo "docstring_parser_fork not previously installed; installing latest"
+          pip install docstring-parser-fork
+        fi
