@@ -31,12 +31,8 @@ runs:
     - name: Re-install docstring_parser_fork
       shell: bash
       run: |
-        docstring_parser_version=$(
-          pip freeze | grep -i docstring_parser== | sed -e 's/==/ /' | awk '{print $2}'
-        )
-        docstring_parser_fork_version=$(
-          pip freeze | grep -i docstring_parser_fork== | sed -e 's/==/ /' | awk '{print $2}'
-        )
+        docstring_parser_version=$(pip freeze | grep -i docstring_parser== | sed -e 's/==/ /' | awk '{print $2}')
+        docstring_parser_fork_version=$(pip freeze | grep -i docstring_parser_fork== | sed -e 's/==/ /' | awk '{print $2}')
         pip uninstall -y docstring_parser_fork docstring_parser
-        pip install docstring_parser==${docstring_parser_version}
-        pip install docstring_parser_fork==${docstring_parser_fork_version}
+        pip install docstring_parser==$docstring_parser_version
+        pip install docstring_parser_fork==$docstring_parser_fork_version
