@@ -47,12 +47,3 @@ jobs:
       - name: Run all pre-commit checks
         run: |
           poetry run pre-commit run --all-files
-
-      - name: Upload coverage to Codecov (main/PR only)
-        uses: codecov/codecov-action@v5
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: .local/coverage
-          fail_ci_if_error: true
-          flags: unittests
-          verbose: true
