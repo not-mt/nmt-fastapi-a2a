@@ -47,5 +47,6 @@ jobs:
       - name: Upload coverage to Codecov (main/PR only)
         uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: .local/coverage
           fail_ci_if_error: true
