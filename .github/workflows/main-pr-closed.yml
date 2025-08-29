@@ -1,15 +1,13 @@
 name: Closed PRs (main)
 
 on:
-  # only run for closed PRs, not pushes or active PRs
-  pull_request:
+  # only run for closed PRs that have pushed to main
+  push:
     branches:
       - main
-    types:
-      - closed
 
 jobs:
-  lint:
+  pre-commit-codecov:
     runs-on: self-hosted
     strategy:
       fail-fast: false
