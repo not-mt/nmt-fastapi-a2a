@@ -1,10 +1,14 @@
-name: Main branch CI
+name: Active PRs (main)
 
 on:
-  # only run for PRs, not pushes
+  # only run for active PRs, not pushes or closed PRs
   pull_request:
     branches:
       - main
+    types:
+      - opened
+      - synchronize
+      - reopened
 
 jobs:
   lint:

@@ -1,10 +1,12 @@
-name: Continuous Integration
+name: Closed PRs (main)
 
 on:
-  push:
-    # only run for non-main branches
-    branches-ignore:
-      - 'main'
+  # only run for closed PRs, not pushes or active PRs
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
 
 jobs:
   lint:
@@ -13,10 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         python-version:
-          - 3.11
           - 3.12
-          - 3.13
-      # max-parallel: 2
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -43,6 +42,15 @@ jobs:
       - name: Fix docstring_parser packages inside Poetry venv
         uses: ./.github/actions/fix-docstring-parser
 
-      - name: Run linter tasks
+      - name: Run all pre-commit checks
         run: |
-          poetry run invoke lint
+          poetry run pre-commit run --all-files
+
+      - name: Upload coverage to Codecov (main/PR only)
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: .local/coverage
+          fail_ci_if_error: true
+          flags: unittests
+          verbose: true
