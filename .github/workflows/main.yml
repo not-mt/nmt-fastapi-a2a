@@ -1,16 +1,13 @@
 name: Main branch CI
 
 on:
-  push:
+  # only run for PRs, not pushes
+  pull_request:
     branches:
       - main
-  pull_request:
-    types: [closed]
 
 jobs:
   lint:
-    # only run for a merged pull request or for direct pushes
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
     runs-on: self-hosted
     strategy:
       fail-fast: false
@@ -41,7 +38,7 @@ jobs:
           poetry install
 
       - name: Fix docstring_parser packages inside Poetry venv
-        uses: ./.github/actions/fix-docstrings
+        uses: ./.github/actions/fix-docstring-parser
 
       - name: Run all pre-commit checks
         run: |
