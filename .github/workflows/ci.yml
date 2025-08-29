@@ -4,12 +4,11 @@ on:
   push:
     branches:
       - '**'  # all branches
-  pull_request:
+  # pull_request:  # do not run for PRs, only pushes
 
 jobs:
   lint:
     # only run for pushes
-    if: github.event_name != 'pull_request'
     runs-on: self-hosted
     strategy:
       fail-fast: false
