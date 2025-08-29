@@ -1,0 +1,46 @@
+#
+# NOTE: this is necessary because some packages depend on docstring_parser,
+#   but pydoclint depends on docstring_parser_fork. It is less than ideal to have
+#   both installed simultaneously due to potential conflicts, BUT if you install
+#   docstring_parser_fork AFTER docstring_parser, you can avoid issues.
+#
+name: fix-docstring-parser
+description: Fix/restore docstring_parser and docstring_parser_fork inside a Poetry virtualenv
+runs:
+  using: "composite"
+  steps:
+    - name: Fix docstring_parser packages inside Poetry venv
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        # Detect versions using poetry-run pip show (tolerant when not installed)
+        doc_ver=$(poetry run pip show docstring-parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+        if [ -z "$doc_ver" ]; then
+          doc_ver=$(poetry run pip show docstring_parser 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+        fi
+
+        doc_fork_ver=$(poetry run pip show docstring-parser-fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+        if [ -z "$doc_fork_ver" ]; then
+          doc_fork_ver=$(poetry run pip show docstring_parser_fork 2>/dev/null | awk -F': ' '/^Version:/{print $2}' || true)
+        fi
+
+        echo "Detected in venv: docstring_parser=${doc_ver:-<none>}, docstring_parser_fork=${doc_fork_ver:-<none>}"
+
+        # Uninstall all likely variants (ignore errors)
+        poetry run pip uninstall -y docstring-parser docstring_parser docstring-parser-fork docstring_parser_fork || true
+
+        if [ -n "$doc_ver" ]; then
+          echo "Reinstalling docstring-parser==$doc_ver"
+          poetry run pip install --ignore-installed "docstring-parser==$doc_ver"
+        else
+          echo "docstring_parser not present in venv; skipping reinstall"
+        fi
+
+        if [ -n "$doc_fork_ver" ]; then
+          echo "Reinstalling docstring-parser-fork==$doc_fork_ver"
+          poetry run pip install --ignore-installed "docstring-parser-fork==$doc_fork_ver"
+        else
+          echo "docstring_parser_fork not present in venv; installing latest"
+          poetry run pip install --ignore-installed docstring-parser-fork
+        fi
