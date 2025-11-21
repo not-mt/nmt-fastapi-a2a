@@ -5,10 +5,117 @@ on:
   push:
     branches:
       - main
+  # NOTE: this allows you to manually run this with a command like:
+  #   gh workflow run .github/workflows/main-pr-closed.yml --ref main
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: 'Branch or ref to run against'
+        required: false
+        default: 'main'
+      run_bump:
+        description: 'Whether to run the bump job (true/false)'
+        required: false
+        default: 'true'
 
 jobs:
-  pre-commit-codecov:
+  bump_version:
+    name: Bump version and create changelog with commitizen
+    # NOTE: we are not using commitizen-action because it was a nightmare
+    #   to troubleshoot
     runs-on: self-hosted
+    env:
+      TARGET_REF: ${{ github.event.inputs.ref || github.ref_name || 'main' }}
+    if: ${{ !(github.event.head_commit && startsWith(github.event.head_commit.message, 'bump:')) }}
+    strategy:
+      matrix:
+        python-version:
+          - 3.12
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: "${{ secrets.COMMITIZEN_PAT }}"
+          fetch-depth: 0
+          fetch-tags: true
+          persist-credentials: true
+          ref: ${{ github.event.inputs.ref || github.ref }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install common dependencies
+        uses: ./.github/actions/install-deps
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install commitizen (TODO fix version)
+        run: |
+          pip install commitizen==4.10.0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # - name: Bump version (dry run)
+      #   if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_bump == 'true' }}
+      #   run: |
+      #     cz --no-raise 3,21 bump --yes --changelog --dry-run
+
+      # - name: Bump version and push (if needed)
+      #   id: bump_and_push
+      #   if: ${{ github.event_name != 'workflow_dispatch' || github.event.inputs.run_bump == 'true' }}
+      #   run: |
+      #     # use commitizen to bump the version and generate changelog
+      #     git checkout "$TARGET_REF"
+
+      #     if cz bump --yes --changelog
+      #     then
+      #       poetry lock
+      #       if git add poetry.lock
+      #       then
+      #         echo "Changes detected to poetry.lock, amending commit..."
+      #         git commit --amend --no-edit
+      #       else
+      #         echo "No changes to poetry.lock"
+      #       fi
+
+      #       # NEW_TAG=$(git describe --tags --abbrev=0)
+      #       NEW_TAG=$(git tag --sort=v:refname | tail -1)
+      #       echo "new_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+
+      #       git push origin HEAD:refs/heads/${TARGET_REF}
+      #       git push origin --tags || true
+      #       # echo "Bumped to version $(git describe --tags --abbrev=0)"
+      #       echo "Bumped to version $NEW_TAG"
+
+      #       # generate release notes
+      #       cz changelog --dry-run $NEW_TAG | grep -v "## $NEW_TAG" > release_notes.md
+      #     else
+      #       echo "No version bump needed."
+      #     fi
+
+      # - name: Create GitHub Release
+      #   uses: ncipollo/release-action@v1
+      #   # NOTE: only run if a new tag/version was created!
+      #   if: ${{ steps.bump_and_push.outputs.new_tag != '' }}
+      #   with:
+      #     tag: ${{ steps.bump_and_push.outputs.new_tag }}
+      #     name: ${{ steps.bump_and_push.outputs.new_tag }}
+      #     bodyFile: release_notes.md
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  codecov:
+    name: Upload coverage to Codecov
+    runs-on: self-hosted
+    if: ${{ !(github.event.head_commit && startsWith(github.event.head_commit.message, 'bump:')) }}
     strategy:
       fail-fast: false
       matrix:
@@ -18,15 +125,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache Poetry / pip
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+      # - name: Cache Poetry / pip
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ~/.cache/pypoetry
+      #       ~/.cache/pip
+      #     key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-poetry-${{ matrix.python-version }}-
 
       - name: Install common dependencies
         uses: ./.github/actions/install-deps

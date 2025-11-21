@@ -1,6 +1,6 @@
 [project]
 name = "app"
-version = "0.1.0"
+version = "1.0.0"
 description = ""
 authors = [
     {name = "Alexander Haye",email = "ahayehaye@not-mt.dev"}
@@ -17,6 +17,8 @@ dependencies = [
     "jinja2 (>=3.1.6,<4.0.0)",
     "httpx (>=0.28.1,<0.29.0)",
     "instructor (>=1.9.2,<2.0.0)",
+    "gitlint (>=0.19.1,<0.20.0)",
+    "commitizen (>=4.10.0,<5.0.0)",
 ]
 
 
@@ -126,6 +128,21 @@ exclude_lines = [
 
 [tool.ruff]
 cache-dir = ".local/ruff_cache"
+
+[tool.commitizen]
+# NOTE: we are not customizing for now, even though we would really like to
+#   support "chore" and "revert" CC types when using `cz commit`; however,
+#   it's a ton of extra boilerplate configuration, and learning how to do CC
+#   commits by hand with git commit isn't _that_ hard! We can revisit this
+#   later, if necessary.
+#name = "cz_customize"
+name = "cz_conventional_commits"
+version = "1.0.0"
+changelog_start_rev = "v1.0.0"
+template = "changelog.j2"
+tag_format = "v$version"
+version_provider = "pep621"
+version_files = ["pyproject.toml"]
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"

@@ -1,0 +1,18 @@
+{% for entry in tree %}
+
+## {{ entry.version }}{% if entry.date %} ({{ entry.date }}){% endif %}
+
+{% for change_key, changes in entry.changes.items() %}
+
+{% for change in changes %}
+{% for key, value in change.items() %}
+{# change - {{ key }}: {{ value }} #}
+{% endfor %}
+{% if change.scope %}
+- **{{ change_key | lower }}({{ change.scope }})**: {{ change.message }} ({{ change.sha1[:7] }})
+{% elif change.message %}
+- {{ change.message }} ({{ change.sha1[:7] }})
+{% endif %}
+{% endfor %}
+{% endfor %}
+{% endfor %}
