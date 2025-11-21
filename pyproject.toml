@@ -1,6 +1,6 @@
 [project]
 name = "app"
-version = "1.0.0"
+version = "1.1.0"
 description = ""
 authors = [
     {name = "Alexander Haye",email = "ahayehaye@not-mt.dev"}
@@ -137,7 +137,7 @@ cache-dir = ".local/ruff_cache"
 #   later, if necessary.
 #name = "cz_customize"
 name = "cz_conventional_commits"
-version = "1.0.0"
+version = "1.1.0"
 changelog_start_rev = "1e6977b9d473cecd1f158abd5c4954486efa6350"
 template = "changelog.j2"
 tag_format = "v$version"
