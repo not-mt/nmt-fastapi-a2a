@@ -7,10 +7,23 @@ repos:
       - id: trailing-whitespace
       - id: check-docstring-first
       - id: check-merge-conflict
-      - id: mixed-line-ending
-        args: [--fix=lf]
+      # - id: mixed-line-ending
+      #   args: [--fix=lf]
   - repo: local
     hooks:
+      - id: gitlint
+        name: gitlint
+        entry: poetry run gitlint
+        language: system
+        args: ["--ignore", "body-is-missing", "--msg-filename"]
+        stages: [commit-msg]
+      # --------------------
+      - id: cz-check
+        name: cz-check
+        entry: poetry run cz check --rev-range HEAD~1..HEAD
+        pass_filenames: false
+        language: system
+        always_run: true
       # --------------------
       - id: black
         name: black

@@ -1,0 +1,7 @@
+# enforce LF in repo for text files, prevent Git from changing line endings unpredictably
+* text=auto
+*.yml text eol=lf
+*.yaml text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.md text eol=lf

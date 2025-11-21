@@ -20,15 +20,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Cache Poetry / pip
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+      # - name: Cache Poetry / pip
+      #   uses: actions/cache@v4
+      #   with:
+      #     path: |
+      #       ~/.cache/pypoetry
+      #       ~/.cache/pip
+      #     key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-poetry-${{ matrix.python-version }}-
 
       - name: Install common dependencies
         uses: ./.github/actions/install-deps
