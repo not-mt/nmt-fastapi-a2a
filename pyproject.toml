@@ -1,6 +1,6 @@
 [project]
 name = "app"
-version = "1.1.0"
+version = "1.1.1"
 description = ""
 authors = [
     {name = "Alexander Haye",email = "ahayehaye@not-mt.dev"}
@@ -137,7 +137,7 @@ cache-dir = ".local/ruff_cache"
 #   later, if necessary.
 #name = "cz_customize"
 name = "cz_conventional_commits"
-version = "1.1.0"
+version = "1.1.1"
 changelog_start_rev = "1e6977b9d473cecd1f158abd5c4954486efa6350"
 template = "changelog.j2"
 tag_format = "v$version"
@@ -158,7 +158,7 @@ pydocstyle = "^6.3.0"
 pytest-cov = "^6.0.0"
 pyright = "^1.1.396"
 types-pyyaml = "^6.0.12.20241230"
-pytest-asyncio = "^1.1.0"
+pytest-asyncio = "^1.1.1"
 
 [tool.poetry.group.dev-nmtfast.dependencies]
 nmtfast = { path = "../nmt-fastapi-library", develop = true }
