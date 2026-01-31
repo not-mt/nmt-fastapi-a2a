@@ -9,10 +9,11 @@
 {# change - {{ key }}: {{ value }} #}
 {% endfor %}
 {% if change.scope %}
-- **{{ change_key | lower }}({{ change.scope }})**: {{ change.message }} ({{ change.sha1[:7] }})
+    {% set message_prefix = change_key | lower ~ '(' ~ change.scope ~ ')' %}
 {% elif change.message %}
-- {{ change.message }} ({{ change.sha1[:7] }})
+    {% set message_prefix = change_key | lower %}
 {% endif %}
+- **{{ message_prefix }}**: {{ change.message }} ({{ change.sha1[:7] }})
 {% endfor %}
 {% endfor %}
 {% endfor %}
