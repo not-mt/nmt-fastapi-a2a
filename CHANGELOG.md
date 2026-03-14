@@ -1,3 +1,7 @@
+## v1.1.2 (2026-03-14)
+
+    - **fix(deps)**: security updates 3/2026 (3e1ed01)
+
 ## v1.1.1 (2026-01-25)
 
 - **fix(deps)**: security updates 1/2026 (217917d)
