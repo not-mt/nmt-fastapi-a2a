@@ -147,7 +147,7 @@ version_files = ["pyproject.toml"]
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^4.1.0"
 pytest = "^8.3.4"
-black = "^25.1.0"
+black = "^26.3.1"
 isort = "^6.0.0"
 mypy = "^1.15.0"
 invoke = "^2.2.0"
